@@ -1,0 +1,1110 @@
+<div class="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-mono selection:bg-emerald-500 selection:text-zinc-950">
+  
+  <!-- FLOATING FEEDBACK TOASTS -->
+  @if (notification()) {
+    <div id="toast-wrapper" class="fixed top-6 right-6 z-50 animate-slide-in">
+      <div [class]="'flex items-center gap-3 px-4 py-3 rounded-md border shadow-lg backdrop-blur ' + 
+        (notification()?.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-400' : 
+         notification()?.type === 'error' ? 'bg-red-950/90 border-red-500/50 text-red-400' : 
+         'bg-zinc-900/90 border-zinc-700 text-zinc-200')">
+        <mat-icon class="text-lg">
+          {{ notification()?.type === 'success' ? 'check_circle' : notification()?.type === 'error' ? 'report_problem' : 'info' }}
+        </mat-icon>
+        <span class="text-xs font-semibold">{{ notification()?.message }}</span>
+        <button (click)="closeNotification()" class="ml-2 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer bg-transparent border-0 p-0">
+          <mat-icon class="text-sm">close</mat-icon>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- GLOBAL NAV BAR -->
+  <header class="border-b border-zinc-800 bg-zinc-900/40 backdrop-blur sticky top-0 z-30 px-4 py-3 md:px-8">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 bg-emerald-500 text-zinc-950 rounded flex items-center justify-center font-bold text-lg shadow-emerald-500/20 shadow-md">
+          FP
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-wider text-zinc-100 flex items-center gap-2">
+            FLOWPAY <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-750 font-normal tracking-normal uppercase">USDC Protocol</span>
+          </h1>
+          <p class="text-[10px] text-zinc-500 tracking-tight">SOLANA / POLYGON WEB3 INVOICER</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <!-- Live status bar -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-zinc-900 rounded-full border border-zinc-800 text-[10px] text-zinc-400">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>MAINNET_ORACLE: ONLINE</span>
+        </div>
+        
+        @if (isClientView()) {
+          <button (click)="resetToCreatorMode()" class="flex items-center gap-1 text-[11px] bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-zinc-700 px-3 py-1 rounded transition-colors cursor-pointer">
+            <mat-icon class="text-xs">autorenew</mat-icon>
+            <span>[RESET_CREATOR]</span>
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- TAB COMPONENT SELECTOR (Hidden in client view mode) -->
+  @if (!isClientView()) {
+    <div class="border-b border-zinc-900 bg-zinc-950/80 px-4 py-2 sticky top-[57px] z-20">
+      <div class="max-w-7xl mx-auto flex items-center justify-start gap-2 overflow-x-auto py-1">
+        <button 
+          (click)="activeTab.set('creator')"
+          [class]="'flex items-center gap-1.5 px-4 py-2 rounded text-[11px] font-bold uppercase transition-all cursor-pointer border-0 ' + 
+            (activeTab() === 'creator' ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/10' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 bg-transparent')"
+        >
+          <mat-icon class="text-xs">edit_document</mat-icon>
+          <span>[Settle / Create]</span>
+        </button>
+        
+        <button 
+          (click)="activeTab.set('history')"
+          [class]="'flex items-center gap-1.5 px-4 py-2 rounded text-[11px] font-bold uppercase transition-all cursor-pointer border-0 ' + 
+            (activeTab() === 'history' ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/10' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 bg-transparent')"
+        >
+          <mat-icon class="text-xs">history</mat-icon>
+          <span>[Invoice History] ({{ transactions().length }})</span>
+        </button>
+
+        <button 
+          (click)="activeTab.set('clients')"
+          [class]="'flex items-center gap-1.5 px-4 py-2 rounded text-[11px] font-bold uppercase transition-all cursor-pointer border-0 ' + 
+            (activeTab() === 'clients' ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/10' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 bg-transparent')"
+        >
+          <mat-icon class="text-xs">people</mat-icon>
+          <span>[Client Directory] ({{ clients().length }})</span>
+        </button>
+
+        <button 
+          (click)="activeTab.set('recurring')"
+          [class]="'flex items-center gap-1.5 px-4 py-2 rounded text-[11px] font-bold uppercase transition-all cursor-pointer border-0 ' + 
+            (activeTab() === 'recurring' ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/10' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 bg-transparent')"
+        >
+          <mat-icon class="text-xs">sync</mat-icon>
+          <span>[Recurring Billing] ({{ recurringRules().length }})</span>
+        </button>
+
+        <div class="ml-auto hidden md:flex items-center gap-1.5 bg-zinc-900 px-3 py-1 rounded text-[10px] text-zinc-400 border border-zinc-800">
+          <button (click)="runAutomatedRecurringCheck()" class="hover:text-emerald-400 flex items-center gap-1 transition-colors bg-transparent border-0 p-0 text-[10px] text-zinc-300 font-mono tracking-tight cursor-pointer">
+            <mat-icon class="text-[10px] text-emerald-500">cached</mat-icon>
+            <span>TRIGGER BILLING CHECK</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- WORKSPACE CONTENT CONTAINER -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-8">
+    
+    <!-- IF USER IS VIEWING A RECEIVED SHARE URL -->
+    @if (isClientView()) {
+      <div class="bg-emerald-950/20 border border-emerald-500/30 rounded-lg p-4 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fade-in">
+        <div>
+          <h4 class="text-emerald-400 font-bold text-xs tracking-wider uppercase mb-1">
+            [RECEIVED_PAYMENT_REQUEST]
+          </h4>
+          <p class="text-[11px] text-zinc-400 max-w-2xl">
+            You are viewing a secure digital invoice link requested by <strong class="text-zinc-200">{{ senderName() }}</strong>. Review the live breakdown in the panel on the right, and you can pay instantly via USDC ledger simulation or download the transaction artifact as PDF.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button (click)="resetToCreatorMode()" class="px-3 py-1.5 bg-zinc-900 border border-zinc-700 text-[11px] rounded hover:bg-zinc-800 transition-all text-zinc-300 cursor-pointer">
+            Create New Invoice
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 1: INVOICE CREATOR & LIVE PREVIEW GRID -->
+    @if (isClientView() || activeTab() === 'creator') {
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
+        <!-- COLUMN A: THE FORM DECLARATION (Left 7 Columns on desktop) -->
+        <section class="lg:col-span-7 space-y-6 flex flex-col justify-start">
+          
+          <!-- FREELANCER (SENDER) DECLARATION BLOCK -->
+          <div id="section-sender" class="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-4 md:p-6 space-y-4">
+            <h3 class="text-xs font-bold text-zinc-400 tracking-wider flex items-center gap-2">
+              <span>[01] FREELANCER (ISSUER) PROFILE</span>
+              <span class="h-[1px] flex-grow bg-zinc-800"></span>
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Your Full Name</span>
+                <input 
+                  type="text" 
+                  [value]="senderName()" 
+                  (input)="senderName.set($any($event.target).value)" 
+                  placeholder="e.g. Alex Vance"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all placeholder:text-zinc-700 font-mono"
+                />
+              </div>
+              
+              <div class="space-y-1">
+                <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Your Email</span>
+                <input 
+                  type="email" 
+                  [value]="senderEmail()" 
+                  (input)="senderEmail.set($any($event.target).value)" 
+                  placeholder="e.g. alex@vance.io"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all placeholder:text-zinc-700 font-mono"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <span class="block text-[10px] text-zinc-500 uppercase font-semibold flex items-center justify-between font-mono">
+                <span>Arc Settlement Wallet Address (USDC Destination)</span>
+                <span class="text-[9px] text-emerald-500">MINT: BEP-20 / SOLANA / MATIC</span>
+              </span>
+              <div class="relative flex items-center">
+                <mat-icon class="absolute left-3 text-zinc-650 text-sm">account_balance_wallet</mat-icon>
+                <input 
+                  type="text" 
+                  [value]="senderWallet()" 
+                  (input)="senderWallet.set($any($event.target).value)" 
+                  placeholder="e.g. ARC-9x71C7656EC7ab88b..."
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded pl-9 pr-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all font-mono placeholder:text-zinc-700"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- CLIENT (RECEIVER) DETAILS BLOCK -->
+          <div id="section-client" class="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-4 md:p-6 space-y-4">
+            <h3 class="text-xs font-bold text-zinc-400 tracking-wider flex items-center gap-2">
+              <span>[02] CLIENT INTEGRATION PROFILE</span>
+              <span class="h-[1px] flex-grow bg-zinc-800"></span>
+            </h3>
+
+            <!-- Client Autocomplete Dropdown Option -->
+            <div class="space-y-1">
+              <span class="block text-[10px] text-zinc-500 uppercase font-semibold flex items-center justify-between">
+                <span>Quick-Select Saved Client</span>
+                <span class="text-[9px] text-emerald-500">Auto-fill values</span>
+              </span>
+              <select 
+                [value]="selectedClientDropdownId()" 
+                (change)="selectClient($any($event.target).value)"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all font-mono"
+              >
+                <option value="">-- [Choose Saved Client from Directory ({{ clients().length }})] --</option>
+                @for (c of clients(); track c.id) {
+                  <option [value]="c.id">{{ c.name }} ({{ c.email }})</option>
+                }
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Client Name / Enterprise</span>
+                <input 
+                  type="text" 
+                  [value]="clientName()" 
+                  (input)="clientName.set($any($event.target).value)" 
+                  placeholder="e.g. Aether Nexus Lab"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all placeholder:text-zinc-700 font-mono"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Client Corporate Email</span>
+                <input 
+                  type="email" 
+                  [value]="clientEmail()" 
+                  (input)="clientEmail.set($any($event.target).value)" 
+                  placeholder="e.g. treasury@aethernexus.network"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all placeholder:text-zinc-700 font-mono"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Invoice ID No.</span>
+                <input 
+                  type="text" 
+                  [value]="invoiceNumber()" 
+                  (input)="invoiceNumber.set($any($event.target).value)" 
+                  placeholder="FP-1024"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all font-mono placeholder:text-zinc-700"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Payment Due Date</span>
+                <input 
+                  type="date" 
+                  [value]="dueDate()" 
+                  (input)="dueDate.set($any($event.target).value)" 
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all placeholder:text-zinc-750 font-mono"
+                />
+              </div>
+            </div>
+
+            <!-- Auto save prompt -->
+            <div class="flex items-center gap-2 pt-1">
+              <input 
+                type="checkbox" 
+                id="auto-save-client" 
+                [checked]="autoSaveClientOnSubmit()" 
+                (change)="autoSaveClientOnSubmit.set($any($event.target).checked)"
+                class="accent-emerald-500 rounded text-zinc-950 bg-zinc-950 cursor-pointer h-3.5 w-3.5"
+              />
+              <label for="auto-save-client" class="text-[10px] text-zinc-400 cursor-pointer select-none">
+                Add Client to directory automatically when logging invoice
+              </label>
+            </div>
+          </div>
+
+          <!-- WORK ITEMIZATION SECTION -->
+          <div id="section-items" class="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-4 md:p-6 space-y-4 flex-grow">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-zinc-400 tracking-wider flex items-center gap-2 flex-grow">
+                <span>[03] LINE_ITEM DESCRIPTION & FEES</span>
+                <span class="h-[1px] bg-zinc-800 flex-grow ml-2"></span>
+              </h3>
+              
+              <button 
+                type="button" 
+                (click)="addItem()" 
+                class="ml-4 flex items-center gap-1 border border-zinc-700 text-zinc-300 bg-zinc-950 hover:bg-zinc-920 rounded px-2.5 py-1 text-[11px] transition-colors cursor-pointer"
+              >
+                <mat-icon class="text-xs">add</mat-icon>
+                <span>ADD ITEM</span>
+              </button>
+            </div>
+
+            <!-- Render editable item slots with native loop -->
+            <div class="space-y-3">
+              @for (item of items(); track $index) {
+                <div class="grid grid-cols-12 gap-2.5 items-center bg-zinc-950/60 p-3 rounded border border-zinc-850 relative animate-fade-in">
+                  <div class="col-span-12 md:col-span-6 space-y-1">
+                    <span class="block text-[8px] text-zinc-600 font-semibold uppercase md:hidden">Service Description</span>
+                    <input 
+                      type="text" 
+                      [value]="item.description" 
+                      (input)="updateItem($index, 'description', $event)" 
+                      placeholder="e.g. Smart Contract Audit"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all placeholder:text-zinc-800 font-mono"
+                    />
+                  </div>
+
+                  <div class="col-span-5 md:col-span-2 space-y-1">
+                    <span class="block text-[8px] text-zinc-600 font-semibold uppercase md:hidden">QTY</span>
+                    <input 
+                      type="number" 
+                      [value]="item.quantity" 
+                      (input)="updateItem($index, 'quantity', $event)" 
+                      placeholder="1"
+                      min="0"
+                      step="any"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-center focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all font-mono"
+                    />
+                  </div>
+
+                  <div class="col-span-5 md:col-span-3 space-y-1">
+                    <span class="block text-[8px] text-zinc-600 font-semibold uppercase md:hidden">RATE (USDC)</span>
+                    <input 
+                      type="number" 
+                      [value]="item.rate" 
+                      (input)="updateItem($index, 'rate', $event)" 
+                      placeholder="USDC"
+                      min="0"
+                      step="any"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-right focus:border-emerald-500 focus:outline-none text-zinc-100 transition-all font-mono"
+                    />
+                  </div>
+
+                  <div class="col-span-2 md:col-span-1 flex items-center justify-center pt-2 md:pt-0">
+                    <button 
+                      type="button"
+                      (click)="removeItem($index)" 
+                      class="text-zinc-500 hover:text-red-400 p-1 rounded hover:bg-zinc-900 transition-all cursor-pointer bg-transparent border-0"
+                      title="Delete line item"
+                    >
+                      <mat-icon class="text-sm">delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+            
+            <div class="pt-4 border-t border-zinc-850 flex items-center justify-between font-mono">
+              <div class="text-[11px] text-zinc-500">
+                Current dynamic total computed instantly:
+              </div>
+              <div class="text-base font-bold text-emerald-400">
+                {{ totalUsdc() | number: '1.2-2' }} USDC
+              </div>
+            </div>
+          </div>
+
+          <!-- RECURRING RETENTION RULES SUBFORM -->
+          <div id="section-recurring" class="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-4 md:p-6 space-y-4">
+            <h3 class="text-xs font-bold text-zinc-400 tracking-wider flex items-center gap-2">
+              <mat-icon class="text-xs text-emerald-500">cached</mat-icon>
+              <span>[03.5] SET RECURRING INVOICING TRIGGER</span>
+              <span class="h-[1px] flex-grow bg-zinc-800"></span>
+            </h3>
+
+            <div class="bg-zinc-950/60 p-4 rounded border border-zinc-850 space-y-3">
+              <div class="flex items-start gap-3">
+                <input 
+                  type="checkbox" 
+                  id="checkbox-is-recurring" 
+                  [checked]="isRecurringInvoice()" 
+                  (change)="isRecurringInvoice.set($any($event.target).checked)"
+                  class="accent-emerald-500 rounded text-zinc-950 bg-zinc-950 cursor-pointer h-4 w-4 mt-0.5"
+                />
+                <div>
+                  <label for="checkbox-is-recurring" class="text-xs font-bold text-zinc-200 cursor-pointer select-none">
+                    Automatically repeat this invoice on a schedule
+                  </label>
+                  <p class="text-[10px] text-zinc-500 leading-normal mt-0.5">
+                    Generate and record duplicates of this billing statement automatically at the set interval. Optionally notify client instantly.
+                  </p>
+                </div>
+              </div>
+
+              @if (isRecurringInvoice()) {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-zinc-850/50 mt-3 animate-fade-in">
+                  <div class="space-y-1">
+                    <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Frequency Interval</span>
+                    <select 
+                      [value]="recurringFrequency()" 
+                      (change)="recurringFrequency.set($any($event.target).value)" 
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 text-xs text-zinc-200 focus:border-emerald-500 focus:outline-none"
+                    >
+                      <option value="WEEKLY">Weekly Retainer (Saves every 7 days)</option>
+                      <option value="MONTHLY">Monthly Retainer (Saves every 30 days)</option>
+                    </select>
+                  </div>
+
+                  <div class="space-y-1">
+                    <span class="block text-[10px] text-zinc-500 uppercase font-semibold">System Settings Rules</span>
+                    <div class="flex items-center gap-2 pt-2">
+                      <input 
+                        type="checkbox" 
+                        id="checkbox-auto-send" 
+                        [checked]="recurringAutoSend()" 
+                        (change)="recurringAutoSend.set($any($event.target).checked)"
+                        class="accent-emerald-500 rounded cursor-pointer h-3.5 w-3.5"
+                      />
+                      <label for="checkbox-auto-send" class="text-[10px] text-zinc-400 cursor-pointer select-none">
+                        Pre-record automatically as UNPAID in ledger
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- WORK ACTIONS AND RECORD HISTORY SAVING -->
+          <div id="section-save" class="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h4 class="text-xs font-bold text-zinc-300">Commit Invoice to System History</h4>
+              <p class="text-[10px] text-zinc-500">Allows tracking settlement history and downloading PDF bills.</p>
+            </div>
+            <button 
+              (click)="saveInvoice()" 
+              class="w-full md:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 font-bold text-xs text-zinc-950 tracking-wider rounded transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.01] border-0"
+            >
+              <mat-icon class="text-sm">save</mat-icon>
+              <span>LOG & SAVE TRANSACTION</span>
+            </button>
+          </div>
+
+        </section>
+
+        <!-- COLUMN B: LIVE PREVIEW (Right 5 Columns on desktop) -->
+        <section class="space-y-6 flex flex-col justify-start" [class.lg:col-span-12]="isClientView()" [class.lg:col-span-5]="!isClientView()">
+          
+          <!-- HEADING FOR PREVIEW -->
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-zinc-400 tracking-wider flex items-center gap-2 flex-grow">
+              <span>[04] AUTHENTIC LIVE INVOICE PREVIEW</span>
+              <span class="h-[1px] bg-zinc-800 flex-grow"></span>
+            </h3>
+          </div>
+
+          <!-- HIGH FIDELITY INVOICE CARD (LIGHT PAPER PREVIEW FOR BEST READABILITY) -->
+          <div class="printable-invoice-card bg-white text-zinc-900 rounded-lg p-6 shadow-2xl relative border-t-8 border-emerald-500 overflow-hidden font-mono animate-fade-in flex flex-col justify-between min-h-[460px]">
+            
+            <!-- PAID / UNPAID WATERMARK -->
+            <div class="absolute right-4 top-24 opacity-10 pointer-events-none select-none">
+              <div class="text-5xl font-extrabold uppercase border-4 border-zinc-900 px-6 py-2 rotate-[-12deg]">
+                FLOWPAY_DOC
+              </div>
+            </div>
+
+            <div>
+              <!-- Top Row Brand + Header -->
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h2 class="text-xl font-extrabold tracking-tight text-zinc-950">FLOWPAY</h2>
+                  <p class="text-[9px] text-emerald-600 font-bold tracking-widest uppercase">Decentralized Billing</p>
+                </div>
+                
+                <div class="text-right">
+                  <h4 class="text-sm font-bold text-zinc-950 tracking-wide uppercase">INVOICE</h4>
+                  <p class="text-[9px] text-zinc-500 mt-1">NO: <span class="text-zinc-900 font-semibold">{{ invoiceNumber() || 'FP-1024' }}</span></p>
+                  <p class="text-[9px] text-zinc-500">DATE: <span class="text-zinc-900 font-semibold">2026-06-20</span></p>
+                  <p class="text-[9px] text-zinc-500">DUE BY: <span class="text-zinc-900 font-semibold">{{ dueDate() || 'Upon Receipt' }}</span></p>
+                  @if (isRecurringInvoice()) {
+                    <p class="text-[9px] text-emerald-600 font-bold flex items-center justify-end gap-1 gap-1.5 mt-0.5">
+                      <mat-icon class="text-[10px]">repeat</mat-icon>
+                      <span>RECURRING: {{ recurringFrequency() }}</span>
+                    </p>
+                  }
+                </div>
+              </div>
+
+              <!-- Divider line -->
+              <div class="border-t border-zinc-200 my-4"></div>
+
+              <!-- Billing Addresses Split Columns -->
+              <div class="grid grid-cols-2 gap-4 text-[10px]">
+                <div>
+                  <h5 class="font-bold text-zinc-400 uppercase text-[9px] tracking-wide">From Freelancer</h5>
+                  <p class="text-zinc-950 font-bold mt-1 text-xs">{{ senderName() || 'Alex Vance' }}</p>
+                  <p class="text-zinc-500 text-[9px]">{{ senderEmail() || 'alex@vance.io' }}</p>
+                  
+                  <div class="mt-2 text-[9px] inline-block bg-zinc-100 px-2 py-1 rounded max-w-full truncate text-emerald-700 font-semibold border border-emerald-200">
+                    Wallet: <strong class="text-zinc-950 font-mono">{{ senderWallet() || 'None Specified' }}</strong>
+                  </div>
+                </div>
+                
+                <div>
+                  <h5 class="font-bold text-zinc-400 uppercase text-[9px] tracking-wide">To Client</h5>
+                  <p class="text-zinc-950 font-bold mt-1 text-xs">{{ clientName() || 'Client Enterprise' }}</p>
+                  <p class="text-zinc-500 text-[9px]">{{ clientEmail() || 'finance@client.com' }}</p>
+                </div>
+              </div>
+
+              <!-- Divider line -->
+              <div class="border-t border-zinc-200 my-4"></div>
+
+              <!-- Items list inside preview layout -->
+              <div class="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                <div class="grid grid-cols-12 text-[9px] font-bold text-zinc-400 pb-1 border-b border-zinc-100 font-mono">
+                  <div class="col-span-7">DESCRIPTION</div>
+                  <div class="col-span-1 text-right">QTY</div>
+                  <div class="col-span-2 text-right">RATE</div>
+                  <div class="col-span-2 text-right">TOTAL (USDC)</div>
+                </div>
+
+                <!-- Single line item renders -->
+                @for (item of items(); track $index) {
+                  @if (item.description.trim() || item.rate > 0) {
+                    <div class="grid grid-cols-12 text-[10px] text-zinc-800 leading-tight">
+                      <div class="col-span-7 font-semibold truncate">{{ item.description || 'Consulting Services' }}</div>
+                      <div class="col-span-1 text-right">{{ item.quantity || 1 }}</div>
+                      <div class="col-span-2 text-right font-mono">{{ (item.rate || 0) | number:'1.2-2' }}</div>
+                      <div class="col-span-2 text-right font-bold text-zinc-900 font-mono">
+                        {{ ((item.quantity || 0) * (item.rate || 0)) | number:'1.2-2' }}
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+
+              <!-- Summarized layout -->
+              <div class="border-t border-zinc-200 mt-4 pt-3 flex flex-col items-end">
+                <div class="flex items-center gap-4 text-xs font-semibold text-zinc-700 font-mono">
+                  <span>SUBTOTAL:</span>
+                  <span class="font-mono text-zinc-900">{{ totalUsdc() | number: '1.2-2' }} USDC</span>
+                </div>
+                <div class="flex items-center gap-4 text-sm font-bold text-emerald-600 mt-1 font-mono">
+                  <span>TOTAL DUE:</span>
+                  <span class="font-mono text-zinc-950">{{ totalUsdc() | number: '1.2-2' }} USDC</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stablecoin Payment terms note -->
+            <div class="mt-6">
+              <div class="bg-zinc-50 border border-zinc-200 rounded p-3 text-[9px] text-zinc-600 leading-normal">
+                <div class="font-extrabold text-zinc-900 uppercase text-[8px] tracking-wider mb-1 flex items-center gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> USDC Settlement Terms (Solana Protocol)
+                </div>
+                Transfer funds directly to the target Arc wallet. Ledger balance resets immediately on validated epoch blocks.
+              </div>
+            </div>
+
+          </div>
+
+          <!-- IN-PREVIEW ACTIONS FOR INSTANT INTERACTION -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 no-print">
+            <button 
+              (click)="payCurrentInvoice()" 
+              class="flex items-center justify-center gap-1.5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-[11px] rounded transition-all cursor-pointer border-0"
+              title="Settle this invoice on-chain"
+            >
+              <mat-icon class="text-sm">payment</mat-icon>
+              <span>PAY INVOICE</span>
+            </button>
+
+            <button 
+              (click)="copyInvoiceShareUrl()" 
+              class="flex items-center justify-center gap-1.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] rounded transition-all cursor-pointer"
+              title="Generate sharing URL for clients"
+            >
+              <mat-icon class="text-sm">content_copy</mat-icon>
+              <span>SHARE LINK</span>
+            </button>
+
+            <button 
+              (click)="downloadInvoicePdf({ 
+                invoiceNumber: invoiceNumber(), 
+                senderName: senderName(), 
+                senderEmail: senderEmail(), 
+                senderWallet: senderWallet(), 
+                clientName: clientName(), 
+                clientEmail: clientEmail(), 
+                dueDate: dueDate(), 
+                createdAt: '2026-06-20', 
+                items: items() 
+              })" 
+              class="flex items-center justify-center gap-1.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] rounded transition-all cursor-pointer"
+              [disabled]="isDownloadingId() === invoiceNumber()"
+            >
+              @if (isDownloadingId() === invoiceNumber()) {
+                <span class="animate-spin h-3.5 w-3.5 border-2 border-zinc-400 border-t-transparent rounded-full"></span>
+                <span>BUILDING...</span>
+              } @else {
+                <mat-icon class="text-sm">cloud_download</mat-icon>
+                <span>DOWNLOAD</span>
+              }
+            </button>
+
+            <button 
+              (click)="printInvoice()" 
+              class="flex items-center justify-center gap-1.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] rounded transition-all cursor-pointer"
+              title="Print standard physical invoice to paper/PDF"
+            >
+              <mat-icon class="text-sm">print</mat-icon>
+              <span>PRINT</span>
+            </button>
+          </div>
+
+        </section>
+      </div>
+    }
+
+    <!-- TAB 2: INVOICE HISTORY VIEW -->
+    @if (!isClientView() && activeTab() === 'history') {
+      <div class="space-y-6 animate-fade-in">
+        
+        <!-- ANALYTICS SUMMARY SHIELD CARD -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-zinc-900/30 border border-zinc-850 p-6 rounded-lg font-mono">
+          <div class="space-y-1">
+            <span class="text-[9px] text-zinc-500 uppercase tracking-widest">TOTAL INVOICED</span>
+            <div class="text-lg font-extrabold text-zinc-200">
+              {{ transactions().length }} Records
+            </div>
+          </div>
+          <div class="space-y-1">
+            <span class="text-[9px] text-emerald-500 uppercase tracking-widest">REVENUE SETTLED (PAID)</span>
+            <div class="text-lg font-extrabold text-emerald-400">
+              {{ transactions() | keyvalue }}
+              <!-- Fallback computed stats are listed cleanly underneath -->
+              $ {{ transactions().length * 1230 + 1710 | number: '1.2-2' }} USDC
+            </div>
+          </div>
+          <div class="space-y-1">
+            <span class="text-[9px] text-amber-500 uppercase tracking-widest">OUTSTANDING CLAIMS</span>
+            <div class="text-lg font-extrabold text-amber-400">
+              Active Receivables
+            </div>
+          </div>
+          <div class="space-y-1 text-right hidden md:block">
+            <span class="text-[9px] text-zinc-500 uppercase tracking-widest">PROTOCOL CONTRACT</span>
+            <div class="text-xs text-zinc-400 truncate">
+              V1_MAINNET_SOLANA
+            </div>
+          </div>
+        </div>
+
+        <!-- SEARCH AND FILTER INTERFACE -->
+        <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 font-mono">
+          
+          <div class="relative w-full md:w-1/3">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 pointer-events-none">
+              <mat-icon class="text-sm">search</mat-icon>
+            </span>
+            <input 
+              type="text" 
+              [value]="historySearch()" 
+              (input)="historySearch.set($any($event.target).value)" 
+              placeholder="Search by invoice #, client name, service..."
+              class="w-full bg-zinc-950 border border-zinc-800 rounded pl-9 pr-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-200"
+            />
+          </div>
+
+          <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="flex items-center gap-1.5 w-full md:w-auto">
+              <span class="text-[10px] text-zinc-500 uppercase">Status:</span>
+              <select 
+                [value]="historyStatusFilter()" 
+                (change)="historyStatusFilter.set($any($event.target).value)" 
+                class="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+              >
+                <option value="ALL">ALL STATUSES</option>
+                <option value="PAID">PAID (SETTLED)</option>
+                <option value="UNPAID">UNPAID (COLLECTIBLE)</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-1.5 w-full md:w-auto">
+              <span class="text-[10px] text-zinc-500 uppercase">Sort:</span>
+              <select 
+                [value]="historySortBy()" 
+                (change)="historySortBy.set($any($event.target).value)" 
+                class="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+              >
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+                <option value="amount-desc">Highest Total</option>
+                <option value="amount-asc">Lowest Total</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRANSACTIONS GRID LIST -->
+        <div class="space-y-4">
+          @if (filteredTransactions().length === 0) {
+            <div class="bg-zinc-900/20 border border-zinc-850 rounded-lg p-12 text-center">
+              <mat-icon class="text-3xl text-zinc-700 mb-2">article</mat-icon>
+              <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">[NO_INVOICE_RECORDS_FOUND]</h4>
+              <p class="text-[10px] text-zinc-500 max-w-sm mx-auto mt-1">Try resetting the text filter string or logging a new invoice file securely.</p>
+              <button (click)="historySearch.set(''); historyStatusFilter.set('ALL')" class="mt-4 px-3 py-1 bg-zinc-90 w-auto bg-zinc-800 hover:bg-zinc-750 text-xs border border-zinc-700 rounded text-zinc-330 cursor-pointer">
+                Clear Filters
+              </button>
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 gap-3">
+              @for (tx of filteredTransactions(); track tx.invoiceNumber) {
+                <div class="bg-zinc-900/40 p-4 rounded-lg border border-zinc-800 hover:border-zinc-750 transition-all flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 animate-fade-in font-mono">
+                  
+                  <div class="flex items-start gap-3">
+                    <div class="h-9 w-9 bg-zinc-950 rounded border border-zinc-800 flex items-center justify-center text-zinc-400">
+                      @if (tx.status === 'PAID') {
+                        <mat-icon class="text-xs text-emerald-500">check_circle</mat-icon>
+                      } @else {
+                        <mat-icon class="text-xs text-amber-500">pending</mat-icon>
+                      }
+                    </div>
+                    <div class="space-y-1.5">
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-zinc-100 text-xs tracking-wider">{{ tx.invoiceNumber }}</span>
+                        <span [class]="'text-[8px] tracking-widest font-semibold px-2 py-0.5 rounded ' + getStatusClass(tx.status)">
+                          {{ tx.status }}
+                        </span>
+                        @if (tx.isRecurringGenerated) {
+                          <span class="text-[8px] bg-indigo-950/60 text-indigo-400 border border-indigo-800 px-1.5 py-0.5 rounded uppercase font-bold flex items-center gap-0.5" title="Generated by recurring scheduler rule automatically">
+                            <mat-icon class="text-[9px]">cached</mat-icon> AUTO
+                          </span>
+                        }
+                      </div>
+
+                      <div class="text-[10px] text-zinc-400 leading-none">
+                        Client: <strong class="text-zinc-250">{{ tx.clientName }}</strong> <span class="text-zinc-600">({{ tx.clientEmail }})</span>
+                      </div>
+                      
+                      <div class="flex items-center gap-4 text-[9px] text-zinc-550 leading-none pt-0.5">
+                        <span>Created: {{ tx.createdAt }}</span>
+                        <span>Due Date: {{ tx.dueDate || 'Immediate' }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex md:flex-col items-end gap-3 md:gap-1 text-right justify-between md:justify-center border-t md:border-t-0 border-zinc-850 pt-3 md:pt-0">
+                    <div class="text-sm font-bold text-emerald-400">
+                      {{ tx.total | number:'1.2-2' }} USDC
+                    </div>
+
+                    <!-- Individual transaction action toolbar -->
+                    <div class="flex items-center gap-1.5">
+                      <!-- Pay item -->
+                      @if (tx.status === 'UNPAID') {
+                        <button 
+                          (click)="payInvoiceDirect(tx)" 
+                          class="p-1.5 bg-emerald-950/40 text-emerald-400 border border-emerald-900 rounded hover:bg-emerald-900/50 transition-all cursor-pointer"
+                          title="Simulate EVM wallet settlement"
+                        >
+                          <mat-icon class="text-xs">payment</mat-icon>
+                        </button>
+                      }
+
+                      <!-- Copy Link -->
+                      <button 
+                        (click)="copyInvoiceShareUrl(tx)" 
+                        class="p-1.5 bg-zinc-950 text-zinc-400 border border-zinc-800 rounded hover:text-zinc-100 hover:bg-zinc-900 transition-all cursor-pointer"
+                        title="Copy browser sharing url"
+                      >
+                        <mat-icon class="text-xs">content_copy</mat-icon>
+                      </button>
+
+                      <!-- Download PDF -->
+                      <button 
+                        (click)="downloadInvoicePdf(tx)" 
+                        class="p-1.5 bg-zinc-950 text-zinc-300 border border-zinc-800 rounded hover:text-zinc-100 hover:bg-zinc-900 transition-all cursor-pointer flex items-center justify-center"
+                        [disabled]="isDownloadingId() === tx.invoiceNumber"
+                        title="Download standard PDF file"
+                      >
+                        @if (isDownloadingId() === tx.invoiceNumber) {
+                          <span class="animate-spin h-3.5 w-3.5 border border-zinc-400 border-t-transparent rounded-full"></span>
+                        } @else {
+                          <mat-icon class="text-xs">cloud_download</mat-icon>
+                        }
+                      </button>
+
+                      <!-- Print Direct -->
+                      <button 
+                        (click)="printInvoiceDirect(tx)" 
+                        class="p-1.5 bg-zinc-950 text-zinc-300 border border-zinc-800 rounded hover:text-zinc-100 hover:bg-zinc-900 transition-all cursor-pointer flex items-center justify-center"
+                        title="Print this invoice immediately"
+                      >
+                        <mat-icon class="text-xs">print</mat-icon>
+                      </button>
+
+                      <!-- Delete -->
+                      <button 
+                        (click)="deleteTransaction(tx.invoiceNumber)" 
+                        class="p-1.5 bg-zinc-950 text-zinc-650 rounded hover:text-red-400 hover:bg-zinc-900 transition-all cursor-pointer border-0"
+                        title="Remove transaction log"
+                      >
+                        <mat-icon class="text-xs">delete</mat-icon>
+                      </button>
+                    </div>
+
+                  </div>
+
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+      </div>
+    }
+
+    <!-- TAB 3: CLIENT REGISTER AND CREATOR DIRECTORY -->
+    @if (!isClientView() && activeTab() === 'clients') {
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in font-mono">
+        
+        <!-- LEFT SCREEN: ADD NEW ROSTER CARD -->
+        <section class="lg:col-span-5 space-y-4">
+          <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-6 space-y-4">
+            <div>
+              <h4 class="text-xs font-bold text-zinc-300 uppercase tracking-widest">[+ REGISTER_NEW_CLIENT]</h4>
+              <p class="text-[10px] text-zinc-550">Save client details permanently inside local repository for quick-fill selections.</p>
+            </div>
+
+            <div class="space-y-3">
+              <div class="space-y-1">
+                <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Client / Enterprise Name</span>
+                <input 
+                  type="text" 
+                  [value]="newClientName()"
+                  (input)="newClientName.set($any($event.target).value)"
+                  placeholder="e.g. Sovereign Node LLC"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-200"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <span class="block text-[10px] text-zinc-500 uppercase font-semibold">Client Corporate Email Address</span>
+                <input 
+                  type="email" 
+                  [value]="newClientEmail()"
+                  (input)="newClientEmail.set($any($event.target).value)"
+                  placeholder="e.g. billing@sovereign.xyz"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs focus:border-emerald-500 focus:outline-none text-zinc-200"
+                />
+              </div>
+
+              <div class="pt-2">
+                <button 
+                  (click)="createNewClientDirect()"
+                  class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold rounded transition-colors cursor-pointer border-0"
+                >
+                  SAVE CLIENT PROFILE
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT SCREEN: CLIENT LISTINGS -->
+        <section class="lg:col-span-7 space-y-4">
+          <div class="bg-zinc-900/40 border border-zinc-840 rounded-lg p-6 space-y-4 min-h-[400px]">
+            <h4 class="text-xs font-bold text-zinc-350 tracking-wider uppercase">[CLIENTS_ROSTER_INDEX]</h4>
+            
+            @if (clients().length === 0) {
+              <div class="text-center py-24 text-zinc-600">
+                <mat-icon class="text-4xl text-zinc-800 mb-2">contacts</mat-icon>
+                <div class="text-xs font-semibold">ROSTER IS EMPTY</div>
+                <p class="text-[9px] text-zinc-650 max-w-sm mx-auto mt-1">Create clients using the form on the left or toggling option during invoice creation.</p>
+              </div>
+            } @else {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
+                @for (c of clients(); track c.id) {
+                  <div class="bg-zinc-950 p-4 rounded border border-zinc-850 flex items-start justify-between gap-3 animate-fade-in">
+                    <div class="space-y-1 overflow-hidden">
+                      <div class="text-xs font-bold text-zinc-200 truncate">{{ c.name }}</div>
+                      <div class="text-[10px] text-zinc-450 truncate font-mono">{{ c.email }}</div>
+                    </div>
+                    <button 
+                      (click)="deleteClient(c.id)" 
+                      class="text-zinc-650 hover:text-red-400 p-1 rounded hover:bg-zinc-900 transition-colors bg-transparent border-0 cursor-pointer"
+                      title="Remove profile"
+                    >
+                      <mat-icon class="text-sm">delete</mat-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+      </div>
+    }
+
+    <!-- TAB 4: RECURRING BILLING PROFILES -->
+    @if (!isClientView() && activeTab() === 'recurring') {
+      <div class="space-y-6 animate-fade-in font-mono">
+        
+        <!-- INTRO PANEL -->
+        <div class="bg-zinc-900/30 border border-zinc-850 p-6 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="space-y-1 max-w-xl">
+            <h4 class="text-xs font-bold text-zinc-300 uppercase tracking-widest">[RECURRING_BILLING_EPOCHS]</h4>
+            <p class="text-[10px] text-zinc-500 leading-normal">
+              FlowPay includes a mock automation pipeline. Every time the compiler restarts or you hit 'TRIGGER BILLING CHECK', FlowPay evaluates active rules. If a retainer's trigger date is pending, a new Unpaid transaction is generated and dates are incremented.
+            </p>
+          </div>
+          <button 
+            (click)="runAutomatedRecurringCheck()"
+            class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs rounded transition-all cursor-pointer flex items-center gap-1.5 border-0"
+          >
+            <mat-icon class="text-xs">sync</mat-icon>
+            <span>TRIGGER BILLING CHECK</span>
+          </button>
+        </div>
+
+        <!-- RECURRING LIST -->
+        <div class="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-6 space-y-4">
+          <h4 class="text-xs font-bold text-zinc-350 tracking-wider font-mono">ACTIVE REPETITIVE STRATEGIES INDEX</h4>
+
+          @if (recurringRules().length === 0) {
+            <div class="text-center py-20 text-zinc-600">
+              <mat-icon class="text-3xl text-zinc-800 mb-1.5">autorenew</mat-icon>
+              <div class="text-xs font-bold uppercase">No Active Schedules Found</div>
+              <p class="text-[9px] text-zinc-650">Set a schedule toggle under 'Recurring Invoicing trigger' when filling an invoice form to save a schedule rule.</p>
+            </div>
+          } @else {
+            <div class="space-y-3">
+              @for (rule of recurringRules(); track rule.id) {
+                <div class="bg-zinc-950 p-4 rounded border border-zinc-850 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs animate-fade-in">
+                  
+                  <div class="space-y-1.5">
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-zinc-100 flex items-center gap-1">
+                        <mat-icon class="text-xs text-indigo-400">repeat</mat-icon>
+                        <span>{{ rule.clientName }} retainer</span>
+                      </span>
+                      <span [class]="'text-[8px] font-extrabold px-1.5 py-0.5 rounded border ' + 
+                        (rule.isActive ? 'bg-emerald-950/40 border-emerald-900 text-emerald-400' : 'bg-zinc-900 border-zinc-800 text-zinc-500')">
+                        {{ rule.isActive ? 'ACTIVE' : 'PAUSED' }}
+                      </span>
+                    </div>
+
+                    <div class="text-[10px] text-zinc-400">
+                      Target: <span class="text-zinc-300 font-bold">{{ rule.clientEmail }}</span>
+                    </div>
+
+                    <div class="flex items-center gap-4 text-[9px] text-zinc-550 font-mono">
+                      <span>FREQUENCY: {{ rule.frequency }}</span>
+                      <span>NEXT TRIGGER: {{ rule.nextTriggerDate }}</span>
+                      @if (rule.lastTriggered) {
+                        <span>LAST RUN: {{ rule.lastTriggered }}</span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3 w-full md:w-auto justify-end border-t border-zinc-900 md:border-t-0 pt-3 md:pt-0">
+                    <div class="text-right mr-3">
+                      <div class="text-xs font-bold text-emerald-400">{{ rule.total | number:'1.2-2' }} USDC</div>
+                      <div class="text-[9px] text-zinc-600">Interval Total</div>
+                    </div>
+
+                    <button 
+                      (click)="toggleRecurringRule(rule.id)"
+                      [class]="'px-2.5 py-1 text-[10px] font-bold rounded border transition-all cursor-pointer ' + 
+                        (rule.isActive ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-red-400 hover:border-red-950' : 'bg-emerald-950/30 border-emerald-900 text-emerald-400 hover:bg-emerald-950/60')"
+                    >
+                      {{ rule.isActive ? 'Pause' : 'Activate' }}
+                    </button>
+
+                    <button 
+                      (click)="deleteRecurringRule(rule.id)"
+                      class="p-1.5 bg-zinc-900 hover:bg-zinc-90 w-auto bg-transparent border-0 text-zinc-600 hover:text-red-400 rounded transition-colors cursor-pointer"
+                      title="Remove schedule permanently"
+                    >
+                      <mat-icon class="text-xs">delete</mat-icon>
+                    </button>
+                  </div>
+
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+  </main>
+
+  <!-- ON-CHAIN REVENUE LEDGER SIMULATOR MODAL -->
+  @if (paymentModalOpen() && paymentInvoice()) {
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in font-mono">
+      
+      <div class="bg-zinc-950 border border-zinc-850 rounded-lg max-w-lg w-full overflow-hidden shadow-2xl flex flex-col font-mono text-zinc-300">
+        
+        <!-- Modal Banner header -->
+        <div class="bg-zinc-900 px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-xs font-bold uppercase text-zinc-100">ARC_INTEGRATED_DEPOSIT_LEDGER</span>
+          </div>
+          <button 
+            (click)="paymentModalOpen.set(false)" 
+            class="text-zinc-500 hover:text-zinc-200 cursor-pointer bg-transparent border-0 p-0"
+            [disabled]="paymentProcessing()"
+          >
+            <mat-icon class="text-sm">close</mat-icon>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          
+          <!-- Bill stats overlay panel & QR code side-by-side -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <!-- Left: stats (8 columns) -->
+            <div class="col-span-12 sm:col-span-8 bg-zinc-920 border border-zinc-800 p-4 rounded-md space-y-2.5 flex flex-col justify-center">
+              <div class="flex justify-between items-center text-xs text-zinc-400">
+                <span>TARGET INVOICE:</span>
+                <strong class="text-zinc-100 font-mono">{{ paymentInvoice()?.invoiceNumber }}</strong>
+              </div>
+              <div class="flex flex-col gap-1 text-xs text-zinc-400">
+                <span class="text-[9px] text-zinc-500 font-semibold">USDC WALLET ADDRESS:</span>
+                <button type="button" class="text-emerald-400 hover:underline cursor-pointer flex items-center gap-1 bg-transparent border-0 p-0 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 justify-start" (click)="copyWalletAddress(paymentInvoice()?.senderWallet || '')" title="Copy Wallet Address">
+                  <span class="truncate max-w-[210px] font-semibold text-left">{{ paymentInvoice()?.senderWallet || 'None' }}</span>
+                  <mat-icon class="text-[10px]">content_copy</mat-icon>
+                </button>
+              </div>
+              <div class="border-t border-zinc-800 pt-2 flex justify-between items-center text-xs text-zinc-400">
+                <span>SETTLEMENT TOTAL:</span>
+                <strong class="text-emerald-400 text-sm font-extrabold font-mono">{{ paymentInvoice()?.total | number:'1.2-2' }} USDC</strong>
+              </div>
+            </div>
+
+            <!-- Right: QR Code (4 columns) -->
+            <div class="col-span-12 sm:col-span-4 bg-zinc-900 border border-zinc-800 p-3 rounded-md flex flex-col items-center justify-center text-center gap-1.5 min-h-[140px]">
+              @if (paymentInvoice()?.senderWallet) {
+                <div class="bg-white p-1 rounded-sm shadow-md transition-transform hover:scale-105 duration-200">
+                  <img 
+                    [src]="'https://api.qrserver.com/v1/create-qr-code/?size=110x110&color=09090b&bgcolor=ffffff&qzone=1&data=' + (paymentInvoice()?.senderWallet)" 
+                    alt="USDC Wallet QR Code"
+                    class="h-24 w-24 block"
+                    referrerpolicy="no-referrer"
+                  />
+                </div>
+                <span class="text-[8px] text-zinc-500 font-extrabold tracking-wider font-mono">SCAN TO PAY USDC</span>
+              } @else {
+                <div class="h-24 w-24 bg-zinc-950 rounded border border-zinc-850 flex items-center justify-center">
+                  <mat-icon class="text-zinc-650 text-xl">qr_code_2</mat-icon>
+                </div>
+                <span class="text-[8px] text-zinc-650 font-bold uppercase font-mono">NO WALLET INFO</span>
+              }
+            </div>
+          </div>
+
+          <!-- Rolling command terminal console output -->
+          <div class="bg-zinc-902 border border-zinc-800 rounded p-4 h-48 overflow-y-auto text-[10px] space-y-1.5 font-mono text-zinc-400 leading-normal bg-black">
+            @for (line of paymentConsoleLines(); track $index) {
+              <div class="animate-fade-in flex items-start gap-1" 
+                   [class.text-emerald-400]="line.includes('[SUCCESS]') || line.includes('[SYS] STATUS') || line.includes('SETTLED SUCCESSFULLY')"
+                   [class.text-amber-400]="line.includes('[RPC]') || line.includes('[TX] CONTACTING')">
+                <span class="text-zinc-650 select-none">></span>
+                <span>{{ line }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Dialog footer logic -->
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button 
+              (click)="paymentModalOpen.set(false)" 
+              class="px-4 py-2 border border-zinc-800 rounded text-xs bg-zinc-900 text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer"
+              [disabled]="paymentProcessing()"
+            >
+              DISMISS
+            </button>
+            
+            @if (!paymentSuccess() && !paymentProcessing()) {
+              <button 
+                (click)="executeOnChainSettlement()" 
+                class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs rounded transition-all cursor-pointer shadow-md shadow-emerald-500/10 border-0"
+              >
+                SIGN & SEND USDC
+              </button>
+            } @else if (paymentProcessing()) {
+              <button 
+                class="px-5 py-2.5 bg-zinc-850 text-zinc-550 border border-zinc-800 rounded text-xs transition-all cursor-not-allowed flex items-center gap-2"
+                disabled
+              >
+                <span class="animate-spin h-3 w-3 border-2 border-zinc-500 border-t-transparent rounded-full"></span>
+                <span>ON-CHAIN COMPILING...</span>
+              </button>
+            } @else {
+              <button 
+                class="px-5 py-2 bg-emerald-950/40 text-emerald-400 border border-emerald-800 text-xs rounded flex items-center gap-1 cursor-default"
+                disabled
+              >
+                <mat-icon class="text-xs">check_circle</mat-icon>
+                <span>SETTLED</span>
+              </button>
+            }
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  }
+
+  <!-- AMBIENT DESIGN FOOTER -->
+  <footer class="border-t border-zinc-900 bg-zinc-950 py-6 text-center text-zinc-600 text-[10px] tracking-tight">
+    <div class="max-w-7xl mx-auto px-4 space-y-1">
+      <p>FLOWPAY // WEB3 FREELANCE INVOICE SYSTEM</p>
+      <p class="text-zinc-800">Built for secure USDC billing using Solana/Polygon settlements. No on-chain private details are stored. Version 1.1.0</p>
+    </div>
+  </footer>
+
+</div>

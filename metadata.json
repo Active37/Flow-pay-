@@ -1,0 +1,6 @@
+{
+  "name": "FlowPay",
+  "description": "USDC freelance invoicing tool with live preview and digital PDF generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

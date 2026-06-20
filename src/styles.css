@@ -1,0 +1,160 @@
+/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  background-color: #09090b; /* Zinc 950 */
+  color: #f4f4f5; /* Zinc 100 */
+  font-family: var(--font-sans);
+}
+
+/* Custom scrollbars for a clean workspace look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Highly optimized CSS Print Media Queries for Professional physical/PDF Invoices */
+@media print {
+  /* Establish clean, white background and black high contrast text on root/body */
+  html, body {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Set standardized portrait margins, hiding browser default footers/headers */
+  @page {
+    size: portrait;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+
+  /* Hide absolutely everything inside the layout */
+  header,
+  footer,
+  aside,
+  nav,
+  input,
+  select,
+  textarea,
+  button,
+  .no-print,
+  #toast-wrapper,
+  #section-sender,
+  #section-client,
+  #section-items,
+  #section-recurring,
+  #section-save,
+  .grid-cols-2 {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Make sure body displays as block and isn't obscured */
+  body {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* Hide all elements by default, and selectively display only the printable card */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Target the printable invoice card exactly and make it and all its descendants visible */
+  .printable-invoice-card,
+  .printable-invoice-card * {
+    visibility: visible !important;
+    color: #111827 !important;
+  }
+
+  /* Structure card into an exquisite full-page layout */
+  .printable-invoice-card {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    border: none !important;
+    border-top: 8px solid #059669 !important; /* Rich, physical emerald border */
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Override dark text controls and margins for deep readability on paper */
+  .printable-invoice-card .text-zinc-950,
+  .printable-invoice-card .text-zinc-900,
+  .printable-invoice-card .text-zinc-800,
+  .printable-invoice-card .text-zinc-700 {
+    color: #111827 !important;
+  }
+
+  .printable-invoice-card .text-zinc-500,
+  .printable-invoice-card .text-zinc-400 {
+    color: #4b5563 !important;
+  }
+
+  /* Soften line list container, allowing standard overflows on physical paper */
+  .printable-invoice-card .space-y-2 {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Table-like row layouts */
+  .printable-invoice-card .grid {
+    gap: 8px !important;
+  }
+
+  /* Keep invoice content together on single pagination sheets */
+  .printable-invoice-card tr,
+  .printable-invoice-card h2,
+  .printable-invoice-card h4,
+  .printable-invoice-card .border-t {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Ensure the design watermark prints gracefully */
+  .printable-invoice-card .opacity-10 {
+    opacity: 0.08 !important;
+  }
+
+  /* Keep green branding accent prominent */
+  .printable-invoice-card .text-emerald-600 {
+    color: #059669 !important;
+  }
+}
+
+
