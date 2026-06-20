@@ -533,13 +533,41 @@
               </div>
             </div>
 
-            <!-- Stablecoin Payment terms note -->
-            <div class="mt-6">
-              <div class="bg-zinc-50 border border-zinc-200 rounded p-3 text-[9px] text-zinc-600 leading-normal">
-                <div class="font-extrabold text-zinc-900 uppercase text-[8px] tracking-wider mb-1 flex items-center gap-1.5">
-                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> USDC Settlement Terms (Solana Protocol)
+            <!-- Stablecoin Payment terms note with Dynamic QR Code -->
+            <div class="mt-6 border-t border-zinc-150 pt-4">
+              <div class="grid grid-cols-12 gap-3 items-center">
+                <!-- Left Details -->
+                <div class="col-span-8 space-y-1.5">
+                  <div class="bg-zinc-50 border border-zinc-200 rounded p-2.5 text-[9px] text-zinc-600 leading-normal font-sans">
+                    <div class="font-extrabold text-zinc-900 uppercase text-[8px] tracking-wider mb-1 flex items-center gap-1.5">
+                      <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> USDC Settlement Address (Solana Protocol)
+                    </div>
+                    Transfer funds directly to the target Arc wallet. Ledger balance resets immediately on validated epoch blocks.
+                  </div>
+                  @if (senderWallet()) {
+                    <div class="px-1 text-[9px] text-zinc-500 font-mono break-all leading-normal">
+                      <span class="font-bold text-zinc-700">WALLET:</span> {{ senderWallet() }}
+                    </div>
+                  }
                 </div>
-                Transfer funds directly to the target Arc wallet. Ledger balance resets immediately on validated epoch blocks.
+
+                <!-- Right QR Code -->
+                <div class="col-span-4 flex flex-col items-center justify-center text-center p-2 bg-zinc-50 border border-zinc-200 rounded h-full min-h-[85px]">
+                  @if (senderWallet()) {
+                    <div class="p-0.5 bg-white rounded border border-zinc-200 shadow-sm hover:scale-105 transition-transform duration-250">
+                      <img 
+                        [src]="'https://api.qrserver.com/v1/create-qr-code/?size=110x110&color=059669&bgcolor=ffffff&qzone=1&data=' + (senderWallet())" 
+                        alt="USDC Destination QR"
+                        class="h-[60px] w-[60px] block"
+                        referrerpolicy="no-referrer"
+                      />
+                    </div>
+                    <span class="text-[7px] text-zinc-500 font-extrabold tracking-wider font-mono mt-1">SCAN TO PAY</span>
+                  } @else {
+                    <mat-icon class="text-zinc-300 text-lg">qr_code_2</mat-icon>
+                    <span class="text-[7px] text-zinc-400 font-extrabold uppercase font-mono">NO WALLET</span>
+                  }
+                </div>
               </div>
             </div>
 
