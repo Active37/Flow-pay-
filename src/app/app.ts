@@ -654,6 +654,23 @@ export class App implements OnInit {
   downloadInvoicePdf(invoiceData: PdfData) {
     if (!this.isBrowser) return;
 
+    // Client-side validations to prevent empty submissions which fail on the server
+    if (!invoiceData.senderName?.trim()) {
+      this.showFloatingNotification('Freelancer profile settings error: Your name is missing.', 'error');
+      return;
+    }
+
+    if (!invoiceData.clientName?.trim()) {
+      this.showFloatingNotification('Client setup error: Please enter the Client Name/Enterprise.', 'error');
+      return;
+    }
+
+    const validItems = (invoiceData.items || []).filter(i => i.description?.trim() || i.rate > 0);
+    if (validItems.length === 0) {
+      this.showFloatingNotification('Line items error: Please describe at least one work item with a rate.', 'error');
+      return;
+    }
+
     this.isDownloadingId.set(invoiceData.invoiceNumber);
 
     fetch('/api/invoice/pdf', {
@@ -661,12 +678,30 @@ export class App implements OnInit {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(invoiceData)
+      body: JSON.stringify({
+        ...invoiceData,
+        items: validItems // send sanitized list
+      })
     })
     .then(async response => {
       if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(errText || 'Failed to download PDF.');
+        let errorMsg = 'Failed to download PDF.';
+        try {
+          const jsonVal = await response.json();
+          if (jsonVal && jsonVal.error) {
+            errorMsg = jsonVal.error;
+          }
+        } catch {
+          try {
+            const rawTxt = await response.text();
+            if (rawTxt) {
+              errorMsg = rawTxt;
+            }
+          } catch {
+            console.warn('Could not parse error response text');
+          }
+        }
+        throw new Error(errorMsg);
       }
       return response.blob();
     })
@@ -684,9 +719,11 @@ export class App implements OnInit {
       this.showFloatingNotification(`PDF downloaded for ${invoiceData.invoiceNumber}!`, 'success');
     })
     .catch(err => {
-      console.error(err);
+      console.error('PDF Download Error:', err);
       this.isDownloadingId.set(null);
-      this.showFloatingNotification('PDF generation server is offline or loading.', 'error');
+      // Show the actual parsed error message from the server/validation, or elegant offline fallback
+      const notice = err.message || 'PDF generation server is offline or loading.';
+      this.showFloatingNotification(notice, 'error');
     });
   }
 

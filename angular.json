@@ -55,7 +55,11 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "externalDependencies": [
+                "@google/genai",
+                "pdfkit"
+              ]
             }
           },
           "defaultConfiguration": "production"
